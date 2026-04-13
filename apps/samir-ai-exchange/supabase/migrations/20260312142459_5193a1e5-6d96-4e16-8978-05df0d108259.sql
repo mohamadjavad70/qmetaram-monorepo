@@ -1,0 +1,1 @@
+CREATE POLICY "Anyone can view reserves" ON public.system_reserves FOR SELECT USING (true);

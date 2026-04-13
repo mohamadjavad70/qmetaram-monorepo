@@ -1,0 +1,9 @@
+version: 1.0
+system: Q-NET
+metrics:
+  control_plane_uptime: 99.95%
+  dns_resolution_p95: 80ms
+  guardian_containment_time: < 2s
+  payout_fraud_threshold: 0.2%
+  false_positive_rate: <= 0.5%
+  replay_rate_max: <= 0.2%

@@ -1,0 +1,31 @@
+project_id = "znugdnkcmwuvfnmdmupn"
+
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.generate-image]
+verify_jwt = false
+
+[functions.generate-music]
+verify_jwt = false
+
+[functions.multi-model-orchestration]
+verify_jwt = false
+
+[functions.activate-plan]
+verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.token-price]
+verify_jwt = false
+
+[functions.token-modules]
+verify_jwt = false

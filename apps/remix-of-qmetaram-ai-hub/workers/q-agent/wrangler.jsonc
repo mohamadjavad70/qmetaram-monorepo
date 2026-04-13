@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "qmetaram-q-agent",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "SUPABASE_URL": "https://znugdnkcmwuvfnmdmupn.supabase.co"
+  }
+}
