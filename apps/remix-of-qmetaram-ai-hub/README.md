@@ -127,6 +127,66 @@ What these scripts do:
 - `status-qnet.ps1`: reports port status, Nginx status, Cloudflare tunnel status, local `.q` domains, public domains, and recent Nginx logs.
 - `check-encoding.ps1`: verifies that Nginx config files are UTF-8 without BOM.
 
+## Q-NET smart deploy on WSL
+
+For the React app in this folder, the recommended WSL deployment path is the smart deploy script exposed as `npm run qnet:smart-deploy`.
+
+What it does:
+
+- Pulls `origin/main` with `--ff-only` unless `QNET_SKIP_PULL=1` is set.
+- Runs `npm install` only when `node_modules` is missing, dependencies changed, or `QNET_FORCE_BUILD=1` is set.
+- Runs `npm run build` only when `dist` is missing, commits changed, or `QNET_FORCE_BUILD=1` is set.
+- Restarts the static origin on port `34757`.
+- Verifies origin health with an internal `curl` check.
+- Starts `qnet-tunnel` only when it is not already running.
+- Writes a centralized status report to `qnet-status.txt`.
+
+Useful commands:
+
+```bash
+npm run qnet:smart-deploy
+npm run qnet:smart-status
+npm run qnet:smart-alert
+cat qnet-origin.log
+cat qnet-tunnel.log
+```
+
+Supported environment variables:
+
+- `QNET_PORT`: override the origin port. Default: `34757`.
+- `QNET_TUNNEL_NAME`: override the Cloudflare tunnel name. Default: `qnet-tunnel`.
+- `QNET_MAIN_BRANCH`: branch used for pull. Default: `main`.
+- `QNET_ORIGIN_LOG`: origin log path. Default: `qnet-origin.log`.
+- `QNET_TUNNEL_LOG`: tunnel log path. Default: `qnet-tunnel.log`.
+- `QNET_STATUS_REPORT`: centralized status file path. Default: `qnet-status.txt`.
+- `QNET_SKIP_PULL=1`: skip `git pull` and deploy current local code.
+- `QNET_FORCE_BUILD=1`: force `npm install` and `npm run build`.
+
+Lightweight alerting:
+
+- `npm run qnet:smart-alert` reads `qnet-status.txt` and exits with code `1` if `http_status` is not `200` or `tunnel_status` is not `running`.
+- Alerts are appended to `qnet-alert.log`.
+- Set `QNET_ALERT_WEBHOOK_URL` to send the same alert payload to a webhook endpoint.
+- Optional overrides:
+	- `QNET_EXPECT_HTTP` default: `200`
+	- `QNET_EXPECT_TUNNEL` default: `running`
+	- `QNET_ALERT_LOG` default: `qnet-alert.log`
+
+Example scheduler-style usage from WSL:
+
+```bash
+cd /mnt/c/Users/KUNIGO/Downloads/sale\ 1404/Q-Network-Core/qmetaram-monorepo/apps/remix-of-qmetaram-ai-hub
+npm run qnet:smart-alert
+```
+
+WSL note about the earlier `ENOENT` install failure:
+
+- The failure pattern is consistent with running Node/npm inside WSL while the project lives on `/mnt/c/...`, where interrupted cleanup of `node_modules` can leave the tree in a partially removed state.
+- The smart deploy script now retries `npm install` once after deleting `node_modules` if it sees `ENOENT` in a `/mnt/*` path.
+- For maximum stability, keep using one runtime consistently and avoid mixing Windows npm and WSL npm on the same `node_modules` tree.
+
+The centralized status file includes the current branch, commit range, HTTP status, tunnel status, and the install/build actions that were taken during the last deploy.
+
 ## Nginx BOM note
 
 This setup previously failed because Windows PowerShell wrote Nginx config files with a UTF-8 BOM. Nginx then interpreted the first directive as `ï»¿worker_processes` and rejected the file.

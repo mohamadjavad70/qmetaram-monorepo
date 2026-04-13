@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+qnet-status.txt
+qnet-alert.log
 
 # Editor directories and files
 .vscode/*
