@@ -14,6 +14,7 @@
     "dev:q-agent-worker": "npx wrangler dev --config ./workers/q-agent/wrangler.jsonc",
     "deploy:q-agent-worker": "npx wrangler deploy --config ./workers/q-agent/wrangler.jsonc",
     "check:supabase": "node ./scripts/check-supabase-config.mjs",
+    "qnet:smart-deploy": "bash ./scripts/qnet-smart-deploy.sh",
     "deploy": "npm run build && node ./scripts/purge-cloudflare-cache.mjs",
     "deploy:chat-functions": "node ./scripts/deploy-chat-functions.mjs"
   },
