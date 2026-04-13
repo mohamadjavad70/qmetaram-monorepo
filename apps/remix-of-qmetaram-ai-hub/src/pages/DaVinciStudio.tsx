@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "@/components/Navbar";
 import { getModuleById } from "@/data/modules";
@@ -42,7 +42,6 @@ const DaVinciStudio = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   // Welcome message on mount
   useEffect(() => {
@@ -64,7 +63,7 @@ I am Da Vinci, your visual arts companion and creative studio partner.
         timestamp: new Date()
       }]);
     }
-  }, [module]);
+  }, [module, messages.length]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -85,10 +84,10 @@ I am Da Vinci, your visual arts companion and creative studio partner.
     );
   }
 
-  const ensureConversation = async (firstMessage: string): Promise<string> => {
+  const ensureConversation = async (firstMessage: string): Promise<string | null> => {
     if (conversationId) return conversationId;
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("AUTH_REQUIRED");
+    if (!user) return null;
     const title = `Da Vinci Studio: ${firstMessage.slice(0, 40)}...`;
     const { data, error } = await supabase
       .from("chat_conversations")
@@ -99,7 +98,8 @@ I am Da Vinci, your visual arts companion and creative studio partner.
     return data.id;
   };
 
-  const saveMessage = async (convId: string, role: string, content: string) => {
+  const saveMessage = async (convId: string | null, role: string, content: string) => {
+    if (!convId) return;
     try {
       await supabase.from("chat_messages").insert({
         conversation_id: convId, role, content, module: "da-vinci"
@@ -293,6 +293,12 @@ Format responses with:
 
     try {
       const convId = await ensureConversation(userMessage.content);
+      if (!convId) {
+        toast({
+          title: "Guest Mode",
+          description: "Chat works without sign-in, but history will not be saved.",
+        });
+      }
       await saveMessage(convId, "user", userMessage.content);
 
       if (activeMode === "generate") {
@@ -338,13 +344,8 @@ Format responses with:
         const assistantContent = await streamChat(userMessage);
         if (assistantContent) await saveMessage(convId, "assistant", assistantContent);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error in chat:", error);
-      if (error?.message === "AUTH_REQUIRED") {
-        toast({ title: "ورود لازم است", description: "برای استفاده از چت ابتدا وارد شوید.", variant: "destructive" });
-        navigate("/auth");
-        return;
-      }
       toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
     }
     setIsLoading(false);

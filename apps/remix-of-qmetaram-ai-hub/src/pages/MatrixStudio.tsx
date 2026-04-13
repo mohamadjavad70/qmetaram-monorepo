@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "@/components/Navbar";
 import { getModuleById } from "@/data/modules";
@@ -68,7 +68,6 @@ const MatrixStudio = () => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   // Welcome message
   useEffect(() => {
@@ -118,10 +117,10 @@ I am Matrix, your AI coding partner capable of generating complete, production-r
     );
   }
 
-  const ensureConversation = async (firstMessage: string): Promise<string> => {
+  const ensureConversation = async (firstMessage: string): Promise<string | null> => {
     if (conversationId) return conversationId;
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("AUTH_REQUIRED");
+    if (!user) return null;
     const title = `Matrix: ${firstMessage.slice(0, 40)}...`;
     const { data, error } = await supabase
       .from("chat_conversations")
@@ -132,7 +131,8 @@ I am Matrix, your AI coding partner capable of generating complete, production-r
     return data.id;
   };
 
-  const saveMessage = async (convId: string, role: string, content: string) => {
+  const saveMessage = async (convId: string | null, role: string, content: string) => {
+    if (!convId) return;
     try {
       await supabase.from("chat_messages").insert({
         conversation_id: convId, role, content, module: "matrix"
@@ -304,16 +304,18 @@ Be thorough, professional, and generate deployable code.`;
 
     try {
       const convId = await ensureConversation(userMessage.content);
+      if (!convId) {
+        toast({
+          title: "Guest Mode",
+          description: "Chat works without sign-in, but history will not be saved.",
+        });
+      }
       await saveMessage(convId, "user", userMessage.content);
       const assistantContent = await streamChat(userMessage);
       if (assistantContent) await saveMessage(convId, "assistant", assistantContent);
     } catch (error: any) {
       console.error("Error in chat:", error);
-      if (error?.message === "AUTH_REQUIRED") {
-        toast({ title: "ورود لازم است", description: "برای استفاده از چت ابتدا وارد شوید.", variant: "destructive" });
-        navigate("/auth");
-        return;
-      }
+      toast({ title: "Error", description: "Failed to get response.", variant: "destructive" });
     }
     setIsLoading(false);
   };
